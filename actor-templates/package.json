@@ -1,0 +1,58 @@
+{
+    "name": "@apify/actor-templates",
+    "version": "0.2.0",
+    "description": "A manifest of Apify actor templates.",
+    "type": "module",
+    "exports": {
+        ".": "./src/index.js"
+    },
+    "scripts": {
+        "lint": "eslint",
+        "lint:fix": "eslint --fix",
+        "format": "prettier --write .",
+        "format:check": "prettier --check .",
+        "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
+        "test-without-templates": "npm run test -- --testPathIgnorePatterns=templates.test.js",
+        "test-templates": "npm run test -- --testPathPatterns=templates.test.js",
+        "test-python-templates": "npm run test-templates -- --testNamePattern=python-templates",
+        "test-node-templates": "npm run test-templates -- --testNamePattern=node-js-templates",
+        "test-llm-ai-python-templates": "npm run test-templates -- --testNamePattern=python-llm-ai-templates",
+        "test-llm-ai-node-templates": "npm run test-templates -- --testNamePattern=node-js-llm-ai-templates",
+        "build": "node ./scripts/copy-agents-md-to-templates.mts && node ./src/build.js"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/apify/actor-templates.git"
+    },
+    "author": "Jakub Drobnik <jakub.drobnik@apify.com>",
+    "contributors": [
+        "Jan Bárta <jan.barta@apify.com>",
+        "Ondra Urban <ondra@apify.com>"
+    ],
+    "license": "ISC",
+    "bugs": {
+        "url": "https://github.com/apify/actor-templates/issues"
+    },
+    "homepage": "https://github.com/apify/actor-templates#readme",
+    "devDependencies": {
+        "@apify/eslint-config": "^2.0.6",
+        "@apify/tsconfig": "0.1.1",
+        "@types/jest": "^30.0.0",
+        "apify": "^3.5.2",
+        "crawlee": "^3.15.3",
+        "eslint": "^9.29.0",
+        "eslint-config-prettier": "^10.1.5",
+        "eslint-plugin-jest": "^28.14.0",
+        "globals": "^17.0.0",
+        "globby": "^16.0.0",
+        "jest": "^30.0.0",
+        "json5": "^2.2.3",
+        "mustache": "^4.2.0",
+        "playwright": "1.59.1",
+        "prettier": "^3.7.4",
+        "puppeteer": "24.42.0",
+        "semver": "^7.7.2",
+        "typescript": "^6.0.0",
+        "typescript-eslint": "^8.58.0"
+    }
+}

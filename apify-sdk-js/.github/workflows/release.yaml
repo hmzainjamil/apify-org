@@ -1,0 +1,188 @@
+name: Release @latest
+
+on:
+    workflow_dispatch:
+        inputs:
+            release_type:
+                description: The version to bump (if you choose custom, please include it under custom version)
+                required: true
+                default: 'patch'
+                type: choice
+                options:
+                    - 'auto'
+                    - 'patch'
+                    - 'minor'
+                    - 'major'
+                    - 'custom'
+            custom_version:
+                description: The custom version to bump to (only for "custom" type)
+                required: false
+                type: string
+                default: ''
+
+concurrency:
+    group: ${{ github.workflow }}-${{ github.ref }}
+    cancel-in-progress: true
+
+jobs:
+    # Test before releasing to ensure we don't release a broken version
+    build_and_test:
+        name: Build & Test
+        if: (!contains(github.event.head_commit.message, '[skip ci]') && !contains(github.event.head_commit.message, 'docs:'))
+        strategy:
+            fail-fast: true
+            matrix:
+                # We don't test on Windows as the tests are flaky
+                os: [ubuntu-22.04]
+                node-version: [20, 22, 24]
+
+        runs-on: ${{ matrix.os }}
+
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v6
+
+            - name: Use Node.js ${{ matrix.node-version }}
+              uses: actions/setup-node@v6
+              with:
+                  node-version: ${{ matrix.node-version }}
+
+            - name: Install pnpm and dependencies
+              uses: apify/workflows/pnpm-install@main
+
+            - name: Install Playwright browsers
+              run: pnpm exec playwright install --with-deps
+
+            - name: Build
+              run: pnpm ci:build
+
+            - name: Tests
+              run: pnpm test
+    release_metadata:
+        name: Prepare release metadata
+        runs-on: ubuntu-latest
+        outputs:
+            version_number: ${{ steps.release_metadata.outputs.version_number }}
+            tag_name: ${{ steps.release_metadata.outputs.tag_name }}
+            changelog: ${{ steps.release_metadata.outputs.changelog }}
+            release_notes: ${{ steps.release_metadata.outputs.release_notes }}
+        steps:
+            - uses: apify/workflows/git-cliff-release@main
+              name: Prepare release metadata
+              id: release_metadata
+              with:
+                  release_type: ${{ inputs.release_type }}
+                  custom_version: ${{ inputs.custom_version }}
+                  existing_changelog_path: CHANGELOG.md
+
+    update_changelog:
+        name: Update changelog
+        if: (!contains(github.event.head_commit.message, '[skip ci]') && !contains(github.event.head_commit.message, 'docs:'))
+        needs: [release_metadata, build_and_test]
+        runs-on: ubuntu-22.04
+        outputs:
+            changelog_commitish: ${{ steps.commit.outputs.commit_long_sha || github.sha }}
+            version_number: ${{ needs.release_metadata.outputs.version_number }}
+            tag_name: ${{ needs.release_metadata.outputs.tag_name }}
+            release_notes: ${{ needs.release_metadata.outputs.release_notes }}
+
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v6
+              with:
+                  token: ${{ secrets.APIFY_SERVICE_ACCOUNT_GITHUB_TOKEN }}
+                  fetch-depth: 0
+
+            - name: Use Node.js 24
+              uses: actions/setup-node@v6
+              with:
+                  node-version: 24
+                  registry-url: 'https://registry.npmjs.org'
+
+            - name: Install pnpm and dependencies
+              uses: apify/workflows/pnpm-install@main
+
+            - name: Update package version in package.json
+              run: pnpm version --no-git-tag-version --allow-same-version ${{ needs.release_metadata.outputs.version_number }}
+
+            - name: Update CHANGELOG.md
+              uses: DamianReeves/write-file-action@master
+              with:
+                  path: CHANGELOG.md
+                  write-mode: overwrite
+                  contents: ${{ needs.release_metadata.outputs.changelog }}
+
+            - name: Add changes to the release commit and push
+              id: commit
+              uses: EndBug/add-and-commit@v10
+              with:
+                  author_name: Apify Release Bot
+                  author_email: noreply@apify.com
+                  message: 'chore(release): set package version to ${{ needs.release_metadata.outputs.version_number }} and update changelog [skip ci]'
+                  pull: '--rebase --autostash'
+
+    create_github_release:
+        name: Create github release
+        needs: [update_changelog]
+        runs-on: ubuntu-latest
+        env:
+            GITHUB_TOKEN: ${{ secrets.APIFY_SERVICE_ACCOUNT_GITHUB_TOKEN }}
+        steps:
+            - name: Create release
+              uses: softprops/action-gh-release@v2
+              with:
+                  tag_name: ${{ needs.update_changelog.outputs.tag_name }}
+                  name: ${{ needs.update_changelog.outputs.version_number }}
+                  target_commitish: ${{ needs.update_changelog.outputs.changelog_commitish }}
+                  body: ${{ needs.update_changelog.outputs.release_notes }}
+
+    version_docs:
+        name: Version docs
+        if: ${{ inputs.release_type == 'minor' || inputs.release_type == 'major' }}
+        needs: [update_changelog]
+        runs-on: ubuntu-22.04
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v6
+              with:
+                  ref: ${{ needs.update_changelog.outputs.changelog_commitish }}
+                  token: ${{ secrets.APIFY_SERVICE_ACCOUNT_GITHUB_TOKEN }}
+
+            - name: Use Node.js 24
+              uses: actions/setup-node@v6
+              with:
+                  node-version: 24
+
+            - name: Install pnpm and dependencies
+              uses: apify/workflows/pnpm-install@main
+
+            - name: Run docusaurus versioning
+              run: |
+                  MAJOR_MINOR=$(echo "${{ needs.update_changelog.outputs.version_number }}" | cut -d. -f1,2)
+                  cd website
+                  pnpm exec docusaurus docs:version "$MAJOR_MINOR"
+                  pnpm exec docusaurus api:version "$MAJOR_MINOR"
+
+            - name: Commit versioned docs
+              uses: EndBug/add-and-commit@v10
+              with:
+                  author_name: Apify Release Bot
+                  author_email: noreply@apify.com
+                  message: 'docs: version docs for ${{ needs.update_changelog.outputs.version_number }} [skip ci]'
+                  pull: '--rebase --autostash'
+                  # `actions/checkout` detaches HEAD on SHA refs; EndBug needs a branch to push.
+                  new_branch: ${{ github.event.repository.default_branch }}
+
+    publish_to_npm:
+        name: Publish to npm
+        runs-on: ubuntu-22.04
+        needs: [update_changelog]
+        steps:
+            - name: Publish to npm
+              uses: apify/workflows/execute-workflow@main
+              with:
+                  workflow: publish-to-npm.yaml
+                  inputs: >
+                      {
+                          "ref": "${{ needs.update_changelog.outputs.changelog_commitish }}"
+                      }

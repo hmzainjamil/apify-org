@@ -1,0 +1,42 @@
+{
+	"name": "Get runs workflow",
+	"nodes": [
+		{
+			"parameters": {
+				"resource": "Actor runs",
+				"operation": "Get runs",
+				"userActorId": {
+					"__rl": true,
+					"value": "nFJndFXA5zjCTuudP",
+					"mode": "list",
+					"cachedResultName": "Google Search Results Scraper",
+					"cachedResultUrl": "https://console.apify.com/actors/nFJndFXA5zjCTuudP/input"
+				}
+			},
+			"type": "n8n-nodes-apify.apify",
+			"typeVersion": 1,
+			"position": [220, 0],
+			"id": "a267e63c-b7b4-4546-815e-6af63afb4230",
+			"name": "Get runs",
+			"credentials": {
+				"apifyApi": {
+					"id": "KffSIpaKJqYH0jXh",
+					"name": "Apify account"
+				}
+			}
+		}
+	],
+	"pinData": {},
+	"connections": {},
+	"active": false,
+	"settings": {
+		"executionOrder": "v1"
+	},
+	"versionId": "b0814fb4-4c2c-41ae-bcf5-7c220e7cf7fd",
+	"meta": {
+		"templateCredsSetupCompleted": true,
+		"instanceId": "98d77b2901fb2f0adcd7c8a9c142688dfbe314db559018e4a7becf49b08cd2bf"
+	},
+	"id": "KZcIgxAot0tOOOOG",
+	"tags": []
+}

@@ -1,0 +1,12 @@
+{
+    "extends": "../tsconfig.json",
+    "compilerOptions": {
+        "rootDir": "../",
+        "noEmit": true,
+        "allowJs": true,
+        "paths": {
+            "apify-client": ["../src"]
+        }
+    },
+    "include": [".", "../src/**/*"]
+}

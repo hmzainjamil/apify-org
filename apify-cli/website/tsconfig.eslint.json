@@ -1,0 +1,18 @@
+{
+	"extends": "@apify/tsconfig",
+	"compilerOptions": {
+		"jsx": "preserve",
+		"allowJs": true
+	},
+	"include": [
+		"src/**/*.js",
+		"src/**/*.ts",
+		"src/**/*.jsx",
+		"src/**/*.tsx",
+		"docusaurus.config.js",
+		"sidebars.js",
+		"sitePlugin.js",
+		"babel.config.js",
+		"tools/**/*.js"
+	]
+}

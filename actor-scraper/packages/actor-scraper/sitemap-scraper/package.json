@@ -1,0 +1,48 @@
+{
+    "name": "@apify/actor-sitemap-extractor",
+    "version": "0.0.1",
+    "private": true,
+    "description": "Crawl web pages from a sitemap using HTTP HEAD requests",
+    "type": "module",
+    "dependencies": {
+        "@apify/scraper-tools": "^1.1.4",
+        "@crawlee/core": "4.0.0-beta.43",
+        "@crawlee/http": "4.0.0-beta.43",
+        "@crawlee/impit-client": "4.0.0-beta.43",
+        "@crawlee/types": "4.0.0-beta.43",
+        "@crawlee/utils": "4.0.0-beta.43",
+        "apify": "4.0.0-beta.12"
+    },
+    "overrides": {
+        "@crawlee/core": "4.0.0-beta.43",
+        "@crawlee/types": "4.0.0-beta.43",
+        "@crawlee/utils": "4.0.0-beta.43"
+    },
+    "devDependencies": {
+        "@apify/tsconfig": "^0.1.0",
+        "@types/node": "^24.0.0",
+        "tsx": "^4.19.1",
+        "typescript": "~5.9.0"
+    },
+    "scripts": {
+        "start": "pnpm start:dev",
+        "start:prod": "node dist/main.js",
+        "start:dev": "tsx src/main.ts",
+        "build": "tsc"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/apify/actor-scraper"
+    },
+    "author": {
+        "name": "Apify Technologies",
+        "email": "support@apify.com",
+        "url": "https://apify.com"
+    },
+    "contributors": [
+        "Marek Trunkat <marek@apify.com>",
+        "Ondra Urban <ondra@apify.com>"
+    ],
+    "license": "Apache-2.0",
+    "homepage": "https://github.com/apify/actor-scraper"
+}

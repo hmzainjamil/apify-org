@@ -1,0 +1,55 @@
+name: Publish to NPM
+
+on:
+    workflow_dispatch:
+        inputs:
+            ref:
+                description: Git ref to publish (branch, tag, or commit SHA)
+                required: true
+                type: string
+            tag:
+                description: NPM dist-tag
+                required: true
+                type: choice
+                default: latest
+                options:
+                    - latest
+                    - beta
+
+permissions:
+    id-token: write # Required for OIDC
+    contents: read
+
+jobs:
+    publish_to_npm:
+        name: Publish to NPM
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v6
+              with:
+                  ref: ${{ inputs.ref }}
+
+            - name: Use Node.js
+              uses: actions/setup-node@v6
+              with:
+                  node-version: 24
+                  registry-url: "https://registry.npmjs.org"
+
+            - name: Install pnpm and dependencies
+              uses: apify/workflows/pnpm-install@main
+
+            - name: Check version consistency and bump pre-release version (beta only)
+              if: ${{ inputs.tag == 'beta' }}
+              run: pnpm exec tsx ./.github/scripts/before-beta-release.ts
+
+            - name: Build module
+              run: pnpm run build
+
+            # The preinstall script enforces pnpm for local development, but breaks
+            # consumers installing with npm (e.g. npm install -g apify-cli) because
+            # npm runs preinstall for top-level/global installs.
+            - name: Remove preinstall guard
+              run: jq 'del(.scripts.preinstall)' package.json > tmp.json && mv tmp.json package.json
+
+            - name: Publish to NPM
+              run: pnpm publish --provenance --access public --no-git-checks --tag ${{ inputs.tag }}

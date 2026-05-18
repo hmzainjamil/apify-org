@@ -1,0 +1,100 @@
+import type { ActorTaggedBuild } from 'apify-client';
+
+import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
+import { Args } from '../../lib/command-framework/args.js';
+import { YesFlag } from '../../lib/command-framework/flags.js';
+import { useInputConfirmation } from '../../lib/hooks/user-confirmations/useInputConfirmation.js';
+import { useYesNoConfirm } from '../../lib/hooks/user-confirmations/useYesNoConfirm.js';
+import { info, success } from '../../lib/outputs.js';
+import { getLoggedClientOrThrow } from '../../lib/utils.js';
+
+export class BuildsRmCommand extends ApifyCommand<typeof BuildsRmCommand> {
+	static override name = 'rm' as const;
+
+	static override description = 'Permanently removes an Actor build from the Apify platform.';
+
+	static override interactive = true;
+
+	static override interactiveNote =
+		'Prompts for confirmation before deleting. Tagged builds additionally require typing the tag name.';
+
+	static override examples = [
+		{
+			description: 'Delete a build (prompts for confirmation).',
+			command: 'apify builds rm <buildId>',
+		},
+	];
+
+	static override docsUrl = 'https://docs.apify.com/cli/docs/reference#apify-builds-rm';
+
+	static override args = {
+		buildId: Args.string({
+			description: 'The build ID to delete.',
+			required: true,
+		}),
+	};
+
+	static override flags = {
+		...YesFlag(),
+	};
+
+	async run() {
+		const { buildId } = this.args;
+		const { yes } = this.flags;
+
+		const apifyClient = await getLoggedClientOrThrow();
+
+		const build = await apifyClient.build(buildId).get();
+
+		if (!build) {
+			throw new Error(`Build with ID "${buildId}" was not found on your account.`);
+		}
+
+		const actor = await apifyClient.actor(build.actId).get();
+
+		let confirmationPrompt: string | undefined;
+
+		if (actor?.taggedBuilds) {
+			// If this build is tagged in the actor, console asks you to write the tag.
+			for (const [tag, buildData] of Object.entries(actor.taggedBuilds) as [string, ActorTaggedBuild][]) {
+				if (buildId === buildData.buildId) {
+					confirmationPrompt = tag;
+					break;
+				}
+			}
+		}
+
+		// If the build is tagged, console asks you to confirm by typing in the tag. Otherwise, it asks you to confirm with a yes/no question.
+		let confirmed: string | boolean;
+
+		if (confirmationPrompt) {
+			confirmed = await useInputConfirmation({
+				message: `Are you sure you want to delete this Actor Build? If so, please type in "${confirmationPrompt}":`,
+				expectedValue: confirmationPrompt,
+				failureMessage: 'Your provided value does not match the build tag.',
+				providedConfirmFromStdin: yes ? confirmationPrompt : undefined,
+			});
+		} else {
+			confirmed = await useYesNoConfirm({
+				message: `Are you sure you want to delete this Actor Build?`,
+				providedConfirmFromStdin: yes || undefined,
+			});
+		}
+
+		if (!confirmed) {
+			info({
+				message: `Deletion of build "${buildId}" was canceled.`,
+				stdout: true,
+			});
+
+			return;
+		}
+
+		await apifyClient.build(buildId).delete();
+
+		success({
+			message: `Build with ID "${buildId}" was deleted.`,
+			stdout: true,
+		});
+	}
+}

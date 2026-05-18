@@ -1,0 +1,117 @@
+[project]
+name = "actor-templates"
+version = "0.0.1"
+requires-python = ">= 3.10"
+dependencies = [
+    "apify[scrapy] >= 3.0.0, < 4.0.0",
+    "apify-client",
+    # "arxiv-mcp-server >= 0.3.1, < 1.0.0",  # Requires Python >= 3.11, incompatible with requires-python >= 3.10
+    "beautifulsoup4[lxml] >= 4.0.0, < 5.0.0",
+    "camoufox[geoip] >= 0.4.5, < 1.0.0",
+    "crawlee[all]",
+    # "crewai[tools] >= 0.11.0, < 1.0.0",  # Pulls onnxruntime via chromadb, which requires Python >= 3.11
+    "fastapi >= 0.135.0, < 1.0.0",
+    "fastmcp >= 3.0.0, < 4.0.0",
+    "httpx >= 0.28.0, < 1.0.0",
+    "langchain >= 1.0.0, < 2.0.0",
+    # "langchain-apify >= 0.1.0, < 1.0.0",  # Incompatible with langchain >= 1.0.0 (requires langchain-core < 0.4.0)
+    "langchain-openai >= 1.0.0, < 2.0.0",
+    "langgraph >= 1.0.0, < 2.0.0",
+    "llama-index >= 0.14.0, < 1.0.0",
+    "mcp >= 1.25.0, < 2.0.0",
+    "playwright >= 1.58.0, < 2.0.0",
+    "polars >= 1.0.0, < 2.0.0",
+    "pydantic >= 2.0.0, < 3.0.0",
+    "pydantic-ai >= 1.0.0, < 2.0.0",
+    "scrapy >= 2.14.0, < 3.0.0",
+    "selenium >= 4.41.0, < 5.0.0",
+    "smolagents[openai] >= 1.0.0, < 2.0.0",
+    "types-beautifulsoup4 >= 4.0.0, < 5.0.0",
+    "uv >= 0.7.8, < 1.0.0",
+    "uvicorn >= 0.27.0, < 1.0.0",
+]
+
+[dependency-groups]
+dev = [
+    "poethepoet < 1.0.0",
+    "ruff ~= 0.15.0",
+    "ty ~= 0.0.0",
+]
+
+[tool.ruff]
+line-length = 120
+include = ["templates/**/*.py"]
+
+[tool.ruff.lint]
+select = ["ALL"]
+ignore = [
+    "ANN401", # Dynamically typed expressions (typing.Any) are disallowed in {filename}
+    "BLE001", # Do not catch blind exception
+    "C901",   # `{name}` is too complex
+    "COM812", # This rule may cause conflicts when used with the formatter
+    "D100",   # Missing docstring in public module
+    "D104",   # Missing docstring in public package
+    "D107",   # Missing docstring in `__init__`
+    "D203",   # One blank line required before class docstring
+    "D213",   # Multi-line docstring summary should start at the second line
+    "D413",   # Missing blank line after last section
+    "EM",     # flake8-errmsg
+    "G004",   # Logging statement uses f-string
+    "ISC001", # This rule may cause conflicts when used with the formatter
+    "FIX",    # flake8-fixme
+    "TRY003", # Avoid specifying long messages outside the exception class
+]
+
+[tool.ruff.format]
+quote-style = "single"
+indent-style = "space"
+
+[tool.ruff.lint.per-file-ignores]
+"**/__init__.py" = [
+    "F401", # Unused imports
+]
+
+[tool.ruff.lint.flake8-quotes]
+docstring-quotes = "double"
+inline-quotes = "single"
+
+[tool.ruff.lint.flake8-type-checking]
+runtime-evaluated-base-classes = [
+    "pydantic.BaseModel",
+    "pydantic_settings.BaseSettings",
+]
+
+[tool.ruff.lint.flake8-builtins]
+builtins-ignorelist = ["id"]
+
+[tool.ruff.lint.pylint]
+max-branches = 18
+
+[tool.pytest.ini_options]
+addopts = "-ra"
+asyncio_default_fixture_loop_scope = "function"
+asyncio_mode = "auto"
+timeout = 1200
+
+[tool.ty.environment]
+python-version = "3.10"
+
+[tool.ty.src]
+include = ["templates"]
+
+# The templates use relative imports as they're run as packages (e.g., python -m my_actor).
+# ty doesn't fully support this pattern yet, so we ignore unresolved-import errors.
+[tool.ty.rules]
+unresolved-import = "ignore"
+
+[tool.poe.tasks]
+clean = "rm -rf .ty_cache .pytest_cache .ruff_cache build dist htmlcov .coverage"
+install-dev = "uv sync --all-extras"
+check-code = ["lint", "type-check"]
+type-check = "uv run ty check"
+
+[tool.poe.tasks.lint]
+shell = "uv run ruff format --check && uv run ruff check"
+
+[tool.poe.tasks.format]
+shell = "uv run ruff check --fix && uv run ruff format"

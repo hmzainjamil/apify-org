@@ -1,0 +1,140 @@
+const { resolve } = require('node:path');
+
+const { config } = require('@apify/docs-theme');
+
+const { externalLinkProcessor } = require('./tools/utils/externalLink.js');
+const versions = require('./versions.json');
+
+const { absoluteUrl } = config;
+/** @type {Partial<import('@docusaurus/types').DocusaurusConfig>} */
+module.exports = {
+    future: {
+        faster: {
+            swcJsLoader: true,
+            swcJsMinimizer: true,
+            swcHtmlMinimizer: true,
+            lightningCssMinimizer: true,
+            rspackBundler: true,
+            mdxCrossCompilerCache: true,
+            rspackPersistentCache: true,
+        },
+        v4: {
+            removeLegacyPostBuildHeadAttribute: true,
+            useCssCascadeLayers: false,
+        },
+    },
+    title: 'CLI | Apify Documentation',
+    url: absoluteUrl,
+    baseUrl: '/cli',
+    trailingSlash: false,
+    organizationName: 'apify',
+    projectName: 'apify-cli',
+    favicon: 'img/favicon.svg',
+    scripts: [...(config.scripts ?? [])],
+    onBrokenLinks:
+    /** @type {import('@docusaurus/types').ReportingSeverity} */ ('throw'),
+    onBrokenMarkdownLinks:
+    /** @type {import('@docusaurus/types').ReportingSeverity} */ ('throw'),
+    themes: [
+        [
+            '@apify/docs-theme',
+            {
+                changelogFromRoot: true,
+                subNavbar: {
+                    title: 'Apify CLI',
+                    items: [
+                        {
+                            type: 'doc',
+                            docId: 'index',
+                            label: 'Docs',
+                            position: 'left',
+                            activeBaseRegex: 'docs(?!/changelog|/reference)',
+                        },
+                        {
+                            type: 'doc',
+                            docId: 'reference',
+                            label: 'Reference',
+                            position: 'left',
+                            activeBaseRegex: 'reference',
+                        },
+                        {
+                            type: 'doc',
+                            docId: 'changelog',
+                            label: 'Changelog',
+                            position: 'left',
+                            activeBaseRegex: 'changelog',
+                        },
+                        {
+                            href: 'https://github.com/apify/apify-cli',
+                            label: 'GitHub',
+                            position: 'left',
+                        },
+                        {
+                            type: 'docsVersionDropdown',
+                            position: 'left',
+                            className: 'navbar__item', // fixes margin around dropdown - hackish, should be fixed in theme
+                            dropdownItemsBefore: [],
+                            dropdownItemsAfter: [],
+                        },
+                    ],
+                },
+            },
+        ],
+    ],
+    presets: /** @type {import('@docusaurus/types').PresetConfig[]} */ ([
+        [
+            '@docusaurus/preset-classic',
+            /** @type {import('@docusaurus/preset-classic').Options} */
+            ({
+                docs: {
+                    // Docusaurus shows the author and date of last commit to entire repo, which doesn't make sense,
+                    // so let's just disable showing author and last modification
+                    showLastUpdateAuthor: false,
+                    showLastUpdateTime: false,
+                    path: '../docs',
+                    sidebarPath: './sidebars.js',
+                    rehypePlugins: [externalLinkProcessor],
+                    editUrl: 'https://github.com/apify/apify-cli/edit/master/website/',
+                },
+            }),
+        ],
+    ]),
+    plugins: [
+        [
+            resolve(__dirname, 'src/plugins/docusaurus-plugin-segment'),
+            {
+                writeKey: process.env.SEGMENT_TOKEN,
+                allowedInDev: false,
+            },
+        ],
+		[
+			'@signalwire/docusaurus-plugin-llms-txt',
+			{
+				content: {
+					includeVersionedDocs: false,
+					enableLlmsFullTxt: true,
+					includeBlog: true,
+					includeGeneratedIndex: false,
+					includePages: true,
+					relativePaths: false,
+				},
+			},
+		],
+        ...config.plugins,
+    ],
+    themeConfig: {
+        ...config.themeConfig,
+        versions,
+        footer: {
+            ...config.themeConfig.footer,
+            logo: {
+                ...config.themeConfig.footer.logo,
+                href: '/docs',
+            },
+        },
+    },
+    staticDirectories: [resolve(require.resolve('@apify/docs-theme/package.json'), '..', 'static'), 'static'],
+    customFields: {
+        ...(config.customFields ?? []),
+    },
+};

@@ -1,0 +1,32 @@
+{
+    "actor-running-time": {
+        "eventTitle": "Actor running time (5 minutes)",
+        "eventDescription": "Cost per running time for each 5 minutes.",
+        "eventPriceUsd":0.005
+    },
+    "input-tokens-sonnet": {
+        "eventTitle": "100 input tokens (Sonnet-4-x)",
+        "eventDescription": "Cost per 100 input tokens for Claude Sonnet (1M tokens = 3$)",
+        "eventPriceUsd": 0.0003
+    },
+    "output-tokens-sonnet": {
+        "eventTitle": "100 output tokens (Sonnet-4-x)",
+        "eventDescription": "Cost per 100 output tokens for Claude Sonnet (1M tokens = 15$)",
+        "eventPriceUsd": 0.0015
+    },
+    "input-tokens-haiku": {
+        "eventTitle": "100 input tokens (Haiku-4-x)",
+        "eventDescription": "Cost per 100 input tokens for Claude Haiku (1M tokens = 1$)",
+        "eventPriceUsd": 0.0001
+    },
+    "output-tokens-haiku": {
+        "eventTitle": "100 output tokens (Haiku-4-x)",
+        "eventDescription": "Cost per 100 output tokens for Claude Haiku (1M tokens = 5$)",
+        "eventPriceUsd": 0.0005
+    },
+    "query-answered": {
+        "eventTitle": "Query answered",
+        "eventDescription": "Cost per query answered.",
+        "eventPriceUsd": 0.005
+    }
+}

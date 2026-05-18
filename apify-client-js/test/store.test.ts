@@ -1,0 +1,63 @@
+import type { AddressInfo } from 'node:net';
+
+import type { StoreCollectionListOptions } from 'apify-client';
+import { ApifyClient } from 'apify-client';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, test } from 'vitest';
+
+import { Browser, DEFAULT_OPTIONS, validateRequest } from './_helper';
+import { mockServer } from './mock_server/server';
+
+describe('Store', () => {
+    let baseUrl: string | undefined;
+    const browser = new Browser();
+
+    beforeAll(async () => {
+        const server = await mockServer.start();
+        await browser.start();
+        baseUrl = `http://localhost:${(server.address() as AddressInfo).port}`;
+    });
+
+    afterAll(async () => {
+        await Promise.all([mockServer.close(), browser.cleanUpBrowser()]);
+    });
+
+    let client: ApifyClient | undefined;
+    let page: any;
+    beforeEach(async () => {
+        page = await browser.getInjectedPage(baseUrl, DEFAULT_OPTIONS);
+        client = new ApifyClient({
+            baseUrl,
+            maxRetries: 0,
+            ...DEFAULT_OPTIONS,
+        });
+    });
+    afterEach(async () => {
+        client = undefined;
+        page.close().catch(() => {});
+    });
+
+    test('list() works', async () => {
+        const opts = {
+            limit: 5,
+            offset: 3,
+            search: 'my search',
+            sortBy: 'my sort',
+            category: 'my category',
+            username: 'my username',
+            pricingModel: 'my pricing model',
+            includeUnrunnableActors: true,
+        };
+
+        const res: any = client && (await client.store().list(opts));
+        expect(res.id).toEqual('store-list');
+        validateRequest({ query: opts });
+
+        const browserRes: any = await page.evaluate(
+            async (options: StoreCollectionListOptions) => client && client.store().list(options),
+            opts,
+        );
+        expect(browserRes.id).toEqual('store-list');
+        expect(browserRes).toEqual(res);
+        validateRequest({ query: opts });
+    });
+});

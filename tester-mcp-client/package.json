@@ -1,0 +1,74 @@
+{
+  "name": "@apify/actors-mcp-client",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Model Context Protocol Client",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "main": "dist/src/main.js",
+  "bin": {
+    "actors-mcp-client": "./dist/src/main.js"
+  },
+  "files": [
+    "dist",
+    "LICENSE"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/apify/actors-mcp-client.git"
+  },
+  "bugs": {
+    "url": "https://github.com/apify/actors-mcp-client/issues"
+  },
+  "homepage": "https://apify.com/apify/actors-mcp-client",
+  "keywords": [
+    "apify",
+    "mcp",
+    "client",
+    "actors",
+    "model context protocol"
+  ],
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.36.2",
+    "@anthropic-ai/tokenizer": "^0.0.4",
+    "@arizeai/openinference-semantic-conventions": "^2.1.0",
+    "@modelcontextprotocol/sdk": "^1.18.2",
+    "@opentelemetry/exporter-trace-otlp-proto": "^0.203.0",
+    "@opentelemetry/instrumentation": "^0.203.0",
+    "@opentelemetry/resources": "^2.0.1",
+    "@opentelemetry/sdk-trace-base": "^2.0.1",
+    "@opentelemetry/sdk-trace-node": "^2.0.1",
+    "@opentelemetry/semantic-conventions": "^1.36.0",
+    "apify": "^3.4.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "eventsource": "^3.0.2",
+    "express": "^4.21.2",
+    "vitest": "^3.1.2"
+  },
+  "devDependencies": {
+    "@apify/eslint-config": "^0.5.0-beta.2",
+    "@apify/tsconfig": "^0.1.0",
+    "@types/cors": "^2.8.17",
+    "@types/express": "^4.0.0",
+    "@types/minimist": "^1.2.5",
+    "eslint": "^9.17.0",
+    "tsx": "^4.6.2",
+    "typescript": "^5.3.3",
+    "typescript-eslint": "^8.18.2"
+  },
+  "scripts": {
+    "start": "npm run start:dev",
+    "start:prod": "node dist/src/main.js",
+    "start:dev": "tsx src/main.ts",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "build": "tsc",
+    "test": "vitest run",
+    "watch": "tsc --watch",
+    "inspector": "npx @modelcontextprotocol/inspector dist/src/main.js"
+  },
+  "author": "Apify",
+  "license": "MIT"
+}

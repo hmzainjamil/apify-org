@@ -1,0 +1,136 @@
+name: "[impit-node] Release to npm"
+env:
+  DEBUG: napi:*
+  APP_NAME: impit-node
+  MACOSX_DEPLOYMENT_TARGET: '10.13'
+  RUSTFLAGS: '--cfg reqwest_unstable'
+permissions:
+  contents: write
+  id-token: write
+on:
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: 'Bump version'
+        required: true
+        type: choice
+        default: 'patch'
+        options:
+          - 'major'
+          - 'minor'
+          - 'patch'
+
+jobs:
+    test:
+        name: Build and test
+        uses: ./.github/workflows/node-test.yaml
+        secrets: inherit
+
+    publish:
+        outputs:
+          bumped-version-commit-sha: ${{ steps.commit.outputs.commit_long_sha || github.sha }}
+          new_version: ${{ steps.get-new-version.outputs.TARGET_VERSION }}
+        defaults:
+          run:
+            working-directory: impit-node
+        name: Publish
+        runs-on: ubuntu-latest
+        needs: [test]
+        steps:
+          - uses: actions/checkout@v6
+            with:
+              token: ${{ secrets.APIFY_SERVICE_ACCOUNT_GITHUB_TOKEN }}
+
+          - name: Setup node
+            uses: actions/setup-node@v6
+            with:
+              node-version: 24
+              registry-url: 'https://registry.npmjs.org'
+
+          - name: Install pnpm and dependencies
+            uses: apify/workflows/pnpm-install@main
+            with:
+              working-directory: impit-node
+
+          - name: Download all artifacts
+            uses: actions/download-artifact@v8
+            with:
+              path: artifacts
+
+          - name: Move artifacts
+            run: pnpm artifacts
+
+          - name: List packages
+            run: ls -R ./npm
+            shell: bash
+
+          - name: Calculate version
+            id: get-new-version
+            run: |
+              echo "TARGET_VERSION=$(pnpm dlx semver --increment ${{ github.event.inputs.bump }} $(npm show impit version))" >> "$GITHUB_OUTPUT"
+
+          - name: Set version
+            run: |
+              pnpm version --no-git-tag-version ${{ steps.get-new-version.outputs.TARGET_VERSION }}
+              pnpm copy-version
+
+          - name: Publish to npm
+            run: pnpm publish --no-git-checks --provenance
+
+          - name: Update lockfile
+            run: |
+              for i in $(seq 1 5); do
+                pnpm install --lockfile-only && exit 0
+                [ $i -lt 5 ] && echo "Attempt $i failed, waiting 30s before retry..." && sleep 30
+              done
+              exit 1
+
+          - name: Commit changes
+            id: commit
+            uses: EndBug/add-and-commit@v10
+            with:
+                author_name: Apify Release Bot
+                author_email: noreply@apify.com
+                message: "chore(js-release): Update package version [skip ci]"
+                tag: "js-${{ steps.get-new-version.outputs.TARGET_VERSION }}"
+                pull: '--rebase --autostash'
+
+    changelog:
+      name: Generate changelog
+      needs: [publish]
+      runs-on: ubuntu-latest
+      steps:
+        - name: Checkout
+          uses: actions/checkout@v6
+          with:
+            token: ${{ secrets.APIFY_SERVICE_ACCOUNT_GITHUB_TOKEN }}
+            fetch-depth: 0
+            ref: master
+
+        - name: Generate a changelog
+          uses: orhun/git-cliff-action@v4
+          id: git-cliff
+          with:
+            config: cliff.toml
+            args: --ignore-tags="(py|cli)-*" --include-path="./impit-node/**" --include-path="./impit/**"
+          env:
+            OUTPUT: impit-node/CHANGELOG.md
+            GITHUB_REPO: ${{ github.repository }}
+
+        - name: Commit new changelog
+          id: commit_changelog
+          uses: EndBug/add-and-commit@v10
+          with:
+            author_name: github-actions[bot]
+            author_email: github-actions[bot]@users.noreply.github.com
+            message: "docs: update changelog [skip ci]"
+            add: 'impit-node/CHANGELOG.md'
+            pull: '--rebase --autostash'
+
+        - name: Create release
+          uses: softprops/action-gh-release@v2
+          with:
+            tag_name: "js-${{ needs.publish.outputs.new_version }}"
+            name: "impit-node@${{ needs.publish.outputs.new_version }}"
+            target_commitish: ${{ needs.publish.outputs.bumped-version-commit-sha }}
+            body: ${{ steps.git-cliff.outputs.content }}

@@ -1,0 +1,23 @@
+# IDE
+.idea
+.DS_Store
+.vscode
+.zed
+
+# General
+templates/**/storage
+tmp
+test-actors
+
+# JS
+node_modules
+templates/**/package-lock.json
+*.tsbuildinfo
+
+# Python
+__pycache__
+.mypy_cache
+.pytest_cache
+.ruff_cache
+.venv
+venv

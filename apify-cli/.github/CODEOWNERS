@@ -1,0 +1,7 @@
+# Documentation codeowner
+
+* @vladfrangu
+
+/docs/*.md @szaganek
+/docs/*.mdx @szaganek
+/docs/changelog.md @szaganek

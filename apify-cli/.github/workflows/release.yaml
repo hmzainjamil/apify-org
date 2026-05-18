@@ -1,0 +1,296 @@
+name: Create a release
+
+on:
+    # Trigger a stable version release via GitHub's UI, with the ability to specify the type of release.
+    workflow_dispatch:
+        inputs:
+            release_type:
+                description: Release type
+                required: true
+                type: choice
+                default: auto
+                options:
+                    - auto
+                    - custom
+                    - patch
+                    - minor
+                    - major
+            custom_version:
+                description: The custom version to bump to (only for "custom" type)
+                required: false
+                type: string
+                default: ""
+
+concurrency:
+    group: release
+    cancel-in-progress: false
+
+jobs:
+    release_metadata:
+        name: Prepare release metadata
+        runs-on: ubuntu-latest
+        outputs:
+            version_number: ${{ steps.release_metadata.outputs.version_number }}
+            tag_name: ${{ steps.release_metadata.outputs.tag_name }}
+            changelog: ${{ steps.release_metadata.outputs.changelog }}
+            release_notes: ${{ steps.release_metadata.outputs.release_notes }}
+        steps:
+            - uses: apify/workflows/git-cliff-release@main
+              name: Prepare release metadata
+              id: release_metadata
+              with:
+                  release_type: ${{ inputs.release_type }}
+                  custom_version: ${{ inputs.custom_version }}
+                  existing_changelog_path: CHANGELOG.md
+
+    # If github.ref points to a [skip ci] commit, we assume that it was added by the pre_release workflow,
+    # which doesn't push the commit if code checks don't pass.
+    # Otherwise, the checks will have been triggered by the `run_code_checks` workflow.
+    wait_for_checks:
+        name: Wait for code checks to pass
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v6
+            - name: Check if the head commit contains [skip ci]
+              id: check_skip
+              run: |
+                  if git log --format=%B -n 1 ${{ github.sha }} | head -n 1 | grep '\[skip ci\]$'; then
+                    echo 'skipped=true' >> $GITHUB_OUTPUT
+                  else
+                    echo 'skipped=false' >> $GITHUB_OUTPUT
+                  fi
+
+            - uses: lewagon/wait-on-check-action@v1.6.0
+              if: ${{ steps.check_skip.outputs.skipped == 'false' }}
+              with:
+                  ref: ${{ github.ref }}
+                  repo-token: ${{ secrets.GITHUB_TOKEN }}
+                  check-regexp: (Build|(Local|API) Tests.*|Python Support.*|Docs build)
+                  wait-interval: 5
+
+    update_changelog:
+        needs: [release_metadata, wait_for_checks]
+        name: Update changelog
+        runs-on: ubuntu-latest
+        outputs:
+            changelog_commitish: ${{ steps.commit.outputs.commit_long_sha || github.sha }}
+
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v6
+              with:
+                  token: ${{ secrets.APIFY_SERVICE_ACCOUNT_GITHUB_TOKEN }}
+
+            - name: Use Node.js
+              uses: actions/setup-node@v6
+              with:
+                  node-version: 24
+
+            - name: Install pnpm and dependencies
+              uses: apify/workflows/pnpm-install@main
+
+            - name: Update package version in package.json
+              run: pnpm version ${{ needs.release_metadata.outputs.version_number }} --no-git-tag-version --allow-same-version
+
+            - name: Update README
+              run: pnpm pack
+
+            - name: Update CHANGELOG.md
+              uses: DamianReeves/write-file-action@master
+              with:
+                  path: CHANGELOG.md
+                  write-mode: overwrite
+                  contents: ${{ needs.release_metadata.outputs.changelog }}
+
+            - name: Format
+              run: pnpm run format:fix
+
+            - name: Ignore changes to useCLIMetadata.ts
+              run: |
+                  git update-index --assume-unchanged src/lib/hooks/useCLIMetadata.ts
+
+            - name: Commit changes
+              id: commit
+              uses: EndBug/add-and-commit@v10
+              with:
+                  author_name: Apify Release Bot
+                  author_email: noreply@apify.com
+                  message: "chore(release): Update changelog and package version [skip ci]"
+                  pull: "--rebase --autostash"
+
+    build-bundles:
+        name: Build bundles
+        needs: [release_metadata, update_changelog]
+
+        strategy:
+            fail-fast: false
+            matrix:
+                include:
+                    - os: ubuntu-latest
+                      label: unix
+                    - os: windows-latest
+                      label: windows-x64
+                    - os: windows-11-arm
+                      label: windows-arm64
+
+        runs-on: ${{ matrix.os }}
+
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v6
+              with:
+                  ref: ${{ needs.update_changelog.outputs.changelog_commitish }}
+                  fetch-depth: 0
+
+            - name: Use Node.js
+              uses: actions/setup-node@v6
+              with:
+                  node-version: 24
+                  registry-url: https://registry.npmjs.org
+
+            - name: Install pnpm and dependencies
+              uses: apify/workflows/pnpm-install@main
+
+            - name: Install bun
+              uses: oven-sh/setup-bun@v2
+              if: ${{ matrix.os != 'windows-11-arm' }}
+              with:
+                  bun-version-file: .bun-version
+
+            - name: Install bun (Windows ARM)
+              if: ${{ matrix.os == 'windows-11-arm' }}
+              run: |
+                  $bunVersion = (Get-Content .bun-version).Trim()
+                  irm bun.sh/install.ps1 -OutFile install.ps1
+
+                  # Bun doesn't have Windows ARM64 builds, so the setup-bun action fails. The install script however,
+                  # does "support" it.
+
+                  .\install.ps1 -Version $bunVersion
+
+                  Join-Path (Resolve-Path ~).Path ".bun\bin" >> $env:GITHUB_PATH
+
+            # https://github.com/oven-sh/bun/issues/11198
+            - name: Fix cross-platform building on Actions
+              if: ${{ matrix.os != 'ubuntu-latest' }}
+              run: |
+                  mkdir C:\test
+                  cd C:\test
+                  bun init -y
+                  bun build --compile --target=bun-windows-x64 --outfile test index.ts
+                  bun build --compile --target=bun-windows-x64-baseline --outfile test index.ts
+
+            - name: Set version
+              run: pnpm version ${{ needs.release_metadata.outputs.version_number }} --no-git-tag-version --allow-same-version
+
+            - name: Build Bundles
+              run: pnpm run insert-cli-metadata && pnpm run build-bundles
+
+            - name: Upload bundles
+              uses: actions/upload-artifact@v7
+              with:
+                  name: apify-cli-bundles-${{ matrix.label }}
+                  path: bundles/**
+
+    create_github_release:
+        name: Create GitHub release
+        needs: [release_metadata, update_changelog, build-bundles]
+        runs-on: ubuntu-latest
+
+        env:
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+        steps:
+            # This step also deals with unzipping the archive from GitHub, so we get a big folder with all the bundles!
+            - name: Download bundles
+              uses: actions/download-artifact@v8
+              with:
+                  pattern: apify-cli-bundles-*
+                  merge-multiple: true
+                  path: bundles
+
+            - name: List bundles
+              run: |
+                  ls -la bundles
+
+            - name: Create release
+              uses: softprops/action-gh-release@v2
+              with:
+                  tag_name: ${{ needs.release_metadata.outputs.tag_name }}
+                  name: ${{ needs.release_metadata.outputs.version_number }}
+                  target_commitish: ${{ needs.update_changelog.outputs.changelog_commitish }}
+                  body: ${{ needs.release_metadata.outputs.release_notes }}
+                  files: |
+                      bundles/*
+
+    publish_to_npm:
+        name: Publish to NPM
+        needs: [update_changelog, create_github_release]
+        runs-on: ubuntu-latest
+        steps:
+            - name: Execute publish workflow
+              uses: apify/workflows/execute-workflow@main
+              with:
+                  workflow: publish_to_npm.yaml
+                  inputs: >
+                      {
+                          "ref": "${{ needs.update_changelog.outputs.changelog_commitish }}",
+                          "tag": "latest"
+                      }
+
+    version_docs:
+        name: Version docs
+        needs: [update_changelog, publish_to_npm]
+        uses: ./.github/workflows/version_docs.yaml
+        secrets: inherit
+
+    update_homebrew_formula:
+        name: Update Homebrew Formula
+        needs: [update_changelog, publish_to_npm]
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v6
+              with:
+                  ref: ${{ needs.update_changelog.outputs.changelog_commitish }}
+
+            - name: Set git identity
+              run: |
+                  git config --global user.name 'Apify Service Account'
+                  git config --global user.email 'apify-service-account@users.noreply.github.com'
+
+            - name: Set up Homebrew
+              uses: Homebrew/actions/setup-homebrew@master
+
+            # It can happen that the updated package version is not available right after the `npm publish` command finishes
+            # Try waiting 3 minutes until the updated package version is available
+            - name: Wait for updated package to be available on NPM
+              run: |
+                  PACKAGE_VERSION=`node -p "require('./package.json').version"`
+                  PACKAGE_DEFINITION_URL="https://registry.npmjs.org/apify-cli/${PACKAGE_VERSION}"
+
+                  for _i in {1..30}; do
+                      curl -sf "${PACKAGE_DEFINITION_URL}" &> /dev/null && exit 0;
+                      echo "Package 'apify-cli' version '${PACKAGE_VERSION}' is not available yet, will retry in 10 seconds."
+                      sleep 10;
+                  done
+                  curl -sf "${PACKAGE_DEFINITION_URL}" &> /dev/null || exit 1;
+
+            - name: Update Homebrew formula in apify/homebrew-tap repo
+              run: |
+                  PACKAGE_VERSION=`node -p "require('./package.json').version"`
+                  gh workflow run update_formula.yaml --repo apify/homebrew-tap --field package=apify-cli --field version=$PACKAGE_VERSION
+              env:
+                  GH_TOKEN: ${{ secrets.APIFY_SERVICE_ACCOUNT_GITHUB_TOKEN }}
+
+            - name: Send PR with formula update to homebrew/homebrew-core repo
+              run: |
+                  PACKAGE_VERSION=`node -p "require('./package.json').version"`
+                  brew tap --force homebrew/core
+                  brew bump-formula-pr apify-cli \
+                      --version ${PACKAGE_VERSION} \
+                      --no-browse \
+                      --message "Automatic update of the \`apify-cli\` formula. CC @B4nan @vladfrangu"
+              env:
+                  HOMEBREW_GITHUB_API_TOKEN: ${{ secrets.APIFY_SERVICE_ACCOUNT_GITHUB_TOKEN }}

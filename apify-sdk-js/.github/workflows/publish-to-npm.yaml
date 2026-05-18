@@ -1,0 +1,52 @@
+name: Publish to NPM
+
+on:
+    workflow_dispatch:
+        inputs:
+            ref:
+                description: Git ref to publish (branch, tag, or commit SHA)
+                required: true
+                type: string
+            tag:
+                description: NPM dist-tag
+                required: true
+                type: choice
+                default: latest
+                options:
+                    - latest
+                    - next
+
+permissions:
+    id-token: write # Required for OIDC
+    contents: write # Required to push changelog/lock file updates
+
+jobs:
+    publish_to_npm:
+        name: Publish to NPM
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v6
+              with:
+                  ref: ${{ inputs.ref }}
+                  token: ${{ secrets.APIFY_SERVICE_ACCOUNT_GITHUB_TOKEN }}
+                  fetch-depth: 0
+                  fetch-tags: true
+
+            - name: Use Node.js 24
+              uses: actions/setup-node@v6
+              with:
+                  node-version: 24
+                  registry-url: 'https://registry.npmjs.org'
+
+            - name: Install pnpm and dependencies
+              uses: apify/workflows/pnpm-install@main
+
+            - name: Build module
+              run: pnpm build
+
+            - name: Check version consistency and bump pre-release version (next only)
+              if: ${{ inputs.tag == 'next' }}
+              run: node ./.github/scripts/before-beta-release.js
+
+            - name: Publish to NPM
+              run: pnpm publish --tag ${{ inputs.tag }} --no-git-checks

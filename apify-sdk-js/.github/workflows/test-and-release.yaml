@@ -1,0 +1,123 @@
+name: Check & Release
+
+env:
+    PUPPETEER_DOWNLOAD_BASE_URL: https://storage.googleapis.com/chrome-for-testing-public
+
+on:
+    # Push to master will deploy a dev version
+    push:
+        branches: [master, renovate/**]
+    # PR to master branch will skip deployment
+    pull_request:
+        branches: [master]
+
+concurrency:
+    group: ${{ github.workflow }}-${{ github.ref }}
+    cancel-in-progress: true
+
+jobs:
+    build_and_test:
+        name: Build & Test
+        if: (!contains(github.event.head_commit.message, '[skip ci]') && !contains(github.event.head_commit.message, 'docs:'))
+        runs-on: ${{ matrix.os }}
+
+        strategy:
+            fail-fast: false
+            matrix:
+                # tests on windows are extremely unstable
+                # os: [ ubuntu-22.04, windows-2019 ]
+                os: [ubuntu-22.04]
+                node-version: [20, 22, 24]
+
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v6
+
+            - name: Use Node.js ${{ matrix.node-version }}
+              uses: actions/setup-node@v6
+              with:
+                  node-version: ${{ matrix.node-version }}
+
+            - name: Install pnpm and dependencies
+              uses: apify/workflows/pnpm-install@main
+
+            - name: Install Playwright browsers
+              run: pnpm exec playwright install --with-deps
+
+            - name: Build
+              run: pnpm ci:build
+
+            - name: Tests
+              run: pnpm test
+
+    docs:
+        name: Docs build
+        if: ${{ !contains(github.event.head_commit.message, '[skip ci]') }}
+        runs-on: ubuntu-22.04
+        steps:
+            - name: Checkout Source code
+              uses: actions/checkout@v6
+
+            - name: Use Node.js 24
+              uses: actions/setup-node@v6
+              with:
+                  node-version: 24
+
+            - name: Install pnpm and dependencies
+              uses: apify/workflows/pnpm-install@main
+
+            - name: Build docs
+              if: github.ref != 'refs/heads/master'
+              run: pnpm build
+              working-directory: ./website
+
+    lint:
+        name: Lint
+        runs-on: ubuntu-22.04
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v6
+
+            - name: Use Node.js 24
+              uses: actions/setup-node@v6
+              with:
+                  node-version: 24
+
+            - name: Install pnpm and dependencies
+              uses: apify/workflows/pnpm-install@main
+
+            - name: Lint
+              run: pnpm lint
+
+            - name: Format check
+              run: pnpm format:check
+
+    publish:
+        name: Publish
+        if: (github.ref == 'refs/heads/master') && !contains(github.event.head_commit.message, 'docs:')
+        runs-on: ubuntu-22.04
+        needs: [lint, build_and_test]
+        steps:
+            - name: Checkout Source code
+              uses: actions/checkout@v6
+              with:
+                  fetch-depth: 0 # we need to pull everything to have correct dev version suffix
+                  ref: master
+
+            - name: Use Node.js 24
+              uses: actions/setup-node@v6
+              with:
+                  node-version: 24
+
+            - name: Install pnpm and dependencies
+              uses: apify/workflows/pnpm-install@main
+
+            - name: Publish beta to npm
+              uses: apify/workflows/execute-workflow@main
+              with:
+                  workflow: publish-to-npm.yaml
+                  inputs: >
+                      {
+                          "ref": "${{ github.sha }}",
+                          "tag": "next"
+                      }

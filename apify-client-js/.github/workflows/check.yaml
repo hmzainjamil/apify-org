@@ -1,0 +1,104 @@
+# This workflow runs for every pull request to lint and test the proposed changes.
+
+name: Check
+
+on:
+    pull_request:
+
+    # Push to master will trigger code checks
+    push:
+        branches:
+            - master
+        tags-ignore:
+            - '**' # Ignore all tags to prevent duplicate builds when tags are pushed.
+
+    # Release flow will trigger checks manually
+    workflow_call:
+
+concurrency:
+    group: ${{ github.workflow }}-${{ github.ref }}
+    cancel-in-progress: true
+
+jobs:
+    build_and_test:
+        name: Build & Test
+        if: ${{ !contains(github.event.head_commit.message, '[skip ci]') }}
+        runs-on: ubuntu-latest
+
+        strategy:
+            fail-fast: false
+            matrix:
+                node-version: [20, 22, 24]
+
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v6
+
+            - name: Use Node.js ${{ matrix.node-version }}
+              uses: actions/setup-node@v6
+              with:
+                  node-version: ${{ matrix.node-version }}
+
+            - name: Install pnpm and dependencies
+              uses: apify/workflows/pnpm-install@main
+
+            - name: Install Chrome for puppeteer
+              run: pnpm exec puppeteer browsers install chrome
+
+            - name: Run Tests
+              run: pnpm test
+
+    test_bundling:
+        name: Test bundler support
+        runs-on: ubuntu-latest
+
+        steps:
+            - uses: actions/checkout@v6
+
+            - name: Use Node.js
+              uses: actions/setup-node@v6
+              with:
+                  node-version: 24
+
+            - name: Install pnpm and dependencies
+              uses: apify/workflows/pnpm-install@main
+
+            - name: Run Tests
+              run: pnpm test:bundling
+
+    lint:
+        name: Lint
+        runs-on: ubuntu-latest
+
+        steps:
+            - uses: actions/checkout@v6
+            - name: Use Node.js
+              uses: actions/setup-node@v6
+              with:
+                  node-version: 24
+            - name: Install pnpm and dependencies
+              uses: apify/workflows/pnpm-install@main
+            - run: pnpm lint
+            - name: Format check
+              run: pnpm format:check
+
+    docs:
+        name: Docs build
+        if: ${{ !contains(github.event.head_commit.message, '[skip ci]') }}
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout Source code
+              uses: actions/checkout@v6
+
+            - name: Use Node.js
+              uses: actions/setup-node@v6
+              with:
+                  node-version: 24
+            - name: Install pnpm and dependencies
+              uses: apify/workflows/pnpm-install@main
+
+            - name: Build docs
+              run: |
+                  cd website
+                  pnpm lint
+                  pnpm build

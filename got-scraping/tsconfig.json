@@ -1,0 +1,15 @@
+{
+	"extends": "@apify/tsconfig",
+	"compilerOptions": {
+		"module": "Node16",
+		"moduleResolution": "Node16",
+		"target": "ES2022",
+		"verbatimModuleSyntax": true,
+		"incremental": false,
+		"skipLibCheck": true,
+		"lib": ["DOM", "ESNext"],
+	},
+	"include": [
+		"src"
+	]
+}

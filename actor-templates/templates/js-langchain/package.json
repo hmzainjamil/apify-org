@@ -1,0 +1,36 @@
+{
+    "name": "project-langchain",
+    "version": "0.0.3",
+    "type": "module",
+    "description": "This is a boilerplate of an Apify Actor.",
+    "engines": {
+        "node": ">=18.0.0"
+    },
+    "dependencies": {
+        "@langchain/classic": "^1.0.12",
+        "@langchain/community": "^1.1.9",
+        "@langchain/core": "^1.1.17",
+        "@langchain/openai": "^1.2.3",
+        "apify": "^3.7.0",
+        "hnswlib-node": "^3.0.0",
+        "langchain": "^1.2.15",
+        "tar": "^7.0.0"
+    },
+    "scripts": {
+        "start": "node src/main.js",
+        "format": "prettier --write .",
+        "format:check": "prettier --check .",
+        "lint": "eslint",
+        "lint:fix": "eslint --fix",
+        "test": "vitest run"
+    },
+    "author": "It's not you it's me",
+    "license": "ISC",
+    "devDependencies": {
+        "@apify/eslint-config": "^2.0.0",
+        "eslint": "^9.29.0",
+        "eslint-config-prettier": "^10.1.5",
+        "prettier": "^3.5.3",
+        "vitest": "^4.1.0"
+    }
+}

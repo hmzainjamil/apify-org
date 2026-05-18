@@ -1,0 +1,71 @@
+name: Publish to NPM
+
+on:
+  workflow_call:
+    inputs:
+      ref:
+        description: Git ref to publish (branch, tag, or commit SHA)
+        required: true
+        type: string
+      dist-tag:
+        description: NPM dist-tag (latest or next)
+        required: false
+        type: string
+        default: 'latest'
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: Git ref to publish (branch, tag, or commit SHA)
+        required: true
+        type: string
+      dist-tag:
+        description: NPM dist-tag (latest or next)
+        required: false
+        type: string
+        default: 'latest'
+
+concurrency:
+  group: publish-to-npm
+  cancel-in-progress: false
+
+permissions:
+  id-token: write
+  contents: write
+
+jobs:
+  publish_to_npm:
+    name: Publish to NPM (${{ inputs.dist-tag }})
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+          token: ${{ secrets.APIFY_SERVICE_ACCOUNT_GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Use Node.js 24
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Install pnpm and dependencies
+        uses: apify/workflows/pnpm-install@main
+
+      - name: Publish to NPM (@latest)
+        if: inputs.dist-tag == 'latest'
+        uses: nick-fields/retry@v3
+        with:
+          timeout_minutes: 10
+          max_attempts: 5
+          retry_wait_seconds: 30
+          command: pnpm publish --tag latest --access public --no-git-checks
+
+      - name: Publish to NPM (@next)
+        if: inputs.dist-tag == 'next'
+        uses: nick-fields/retry@v3
+        with:
+          timeout_minutes: 10
+          max_attempts: 5
+          retry_wait_seconds: 30
+          command: pnpm publish --tag next --access public --no-git-checks

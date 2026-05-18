@@ -1,0 +1,57 @@
+name: PR Tests
+
+on:
+    pull_request:
+        branches: [master]
+
+concurrency:
+    group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
+    cancel-in-progress: true
+
+jobs:
+    build_and_test:
+        name: Build & Test
+        if: (!contains(github.event.head_commit.message, '[skip ci]') && !contains(github.event.head_commit.message, 'docs:'))
+        runs-on: ubuntu-22.04
+
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v6
+
+            - name: Use Node.js 24
+              uses: actions/setup-node@v6
+              with:
+                  node-version: 24
+
+            - name: Install pnpm and dependencies
+              uses: apify/workflows/pnpm-install@main
+
+            - name: Install Chrome for puppeteer
+              run: pnpm exec puppeteer browsers install chrome
+
+            - name: Build
+              run: pnpm ci:build
+
+            - name: Tests
+              run: pnpm test
+
+    lint:
+        name: Lint
+        runs-on: ubuntu-22.04
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v6
+
+            - name: Use Node.js 24
+              uses: actions/setup-node@v6
+              with:
+                  node-version: 24
+
+            - name: Install pnpm and dependencies
+              uses: apify/workflows/pnpm-install@main
+
+            - name: Lint
+              run: pnpm lint
+
+            - name: Format check
+              run: pnpm format:check

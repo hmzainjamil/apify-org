@@ -1,0 +1,214 @@
+name: Create a pre-release
+
+on:
+    # Push to master will deploy a beta version
+    push:
+        branches:
+            - master
+        tags-ignore:
+            - "**" # Ignore all tags to prevent duplicate builds when tags are pushed.
+
+concurrency:
+    group: release
+    cancel-in-progress: false
+
+jobs:
+    release_metadata:
+        if: "!startsWith(github.event.head_commit.message, 'docs') && startsWith(github.repository, 'apify/')"
+        name: Prepare release metadata
+        runs-on: ubuntu-latest
+        outputs:
+            version_number: ${{ steps.release_metadata.outputs.version_number }}
+            changelog: ${{ steps.release_metadata.outputs.changelog }}
+            release_notes: ${{ steps.release_metadata.outputs.release_notes }}
+        steps:
+            - uses: apify/workflows/git-cliff-release@main
+              name: Prepare release metadata
+              id: release_metadata
+              with:
+                  release_type: prerelease
+                  existing_changelog_path: CHANGELOG.md
+
+    wait_for_checks:
+        name: Wait for code checks to pass
+        runs-on: ubuntu-latest
+        steps:
+            - uses: lewagon/wait-on-check-action@v1.6.0
+              with:
+                  ref: ${{ github.ref }}
+                  repo-token: ${{ secrets.GITHUB_TOKEN }}
+                  check-regexp: (Build|Lint.*|(Local|API) Tests.*|Python Support.*|Docs build)
+                  wait-interval: 5
+
+    update_changelog:
+        needs: [release_metadata, wait_for_checks]
+        name: Update changelog
+        runs-on: ubuntu-latest
+        outputs:
+            changelog_commitish: ${{ steps.commit.outputs.commit_long_sha || github.sha }}
+            pre_release_version: ${{ steps.get-pre-release-version.outputs.pre_release_version }}
+
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v6
+              with:
+                  token: ${{ secrets.APIFY_SERVICE_ACCOUNT_GITHUB_TOKEN }}
+
+            - name: Use Node.js
+              uses: actions/setup-node@v6
+              with:
+                  node-version: 24
+                  registry-url: https://registry.npmjs.org
+
+            - name: Install pnpm and dependencies
+              uses: apify/workflows/pnpm-install@main
+
+            - name: Update package version in package.json
+              run: pnpm version ${{ needs.release_metadata.outputs.version_number }} --no-git-tag-version --allow-same-version
+
+            - name: Update CHANGELOG.md
+              uses: DamianReeves/write-file-action@master
+              with:
+                  path: CHANGELOG.md
+                  write-mode: overwrite
+                  contents: ${{ needs.release_metadata.outputs.changelog }}
+
+            - name: Format
+              run: pnpm install && pnpm run format:fix
+
+            - name: Commit changes
+              id: commit
+              uses: EndBug/add-and-commit@v10
+              with:
+                  author_name: Apify Release Bot
+                  author_email: noreply@apify.com
+                  message: "chore(release): Update changelog and package version [skip ci]"
+                  pull: "--rebase --autostash"
+
+            - name: Get pre-release version
+              id: get-pre-release-version
+              run: |
+                  pnpm exec tsx ./.github/scripts/before-beta-release.ts
+                  echo "pre_release_version=$(cat package.json | jq -r '.version')" >> $GITHUB_OUTPUT
+
+    build-bundles:
+        name: Build bundles
+        needs: [release_metadata, update_changelog]
+
+        strategy:
+            fail-fast: false
+            matrix:
+                include:
+                    - os: ubuntu-latest
+                      label: unix
+                    - os: windows-latest
+                      label: windows-x64
+                    - os: windows-11-arm
+                      label: windows-arm64
+
+        runs-on: ${{ matrix.os }}
+
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v6
+              with:
+                  ref: ${{ needs.update_changelog.outputs.changelog_commitish }}
+                  fetch-depth: 0
+
+            - name: Use Node.js
+              uses: actions/setup-node@v6
+              with:
+                  node-version: 24
+                  registry-url: https://registry.npmjs.org
+
+            - name: Install pnpm and dependencies
+              uses: apify/workflows/pnpm-install@main
+
+            - name: Install bun
+              uses: oven-sh/setup-bun@v2
+              if: ${{ matrix.os != 'windows-11-arm' }}
+              with:
+                  bun-version-file: .bun-version
+
+            - name: Install bun (Windows ARM)
+              if: ${{ matrix.os == 'windows-11-arm' }}
+              run: |
+                  $bunVersion = (Get-Content .bun-version).Trim()
+                  irm bun.sh/install.ps1 -OutFile install.ps1
+
+                  # Bun doesn't have Windows ARM64 builds, so the setup-bun action fails. The install script however,
+                  # does "support" it.
+
+                  .\install.ps1 -Version $bunVersion
+
+                  Join-Path (Resolve-Path ~).Path ".bun\bin" >> $env:GITHUB_PATH
+
+            # https://github.com/oven-sh/bun/issues/11198
+            - name: Fix cross-platform building on Actions
+              if: ${{ matrix.os != 'ubuntu-latest' }}
+              run: |
+                  mkdir C:\test
+                  cd C:\test
+                  bun init -y
+                  bun build --compile --target=bun-windows-x64 --outfile test index.ts
+                  bun build --compile --target=bun-windows-x64-baseline --outfile test index.ts
+
+            - name: Set pre-release version
+              run: pnpm version ${{ needs.update_changelog.outputs.pre_release_version }} --no-git-tag-version --allow-same-version
+
+            - name: Build Bundles
+              run: pnpm run insert-cli-metadata && pnpm run build-bundles
+
+            - name: Upload bundles
+              uses: actions/upload-artifact@v7
+              with:
+                  name: apify-cli-bundles-${{ matrix.label }}
+                  path: bundles/**
+
+    create_github_release:
+        name: Create GitHub release
+        needs: [release_metadata, update_changelog, build-bundles]
+        runs-on: ubuntu-latest
+
+        env:
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+        steps:
+            # This step also deals with unzipping the archive from GitHub, so we get a big folder with all the bundles!
+            - name: Download bundles
+              uses: actions/download-artifact@v8
+              with:
+                  pattern: apify-cli-bundles-*
+                  merge-multiple: true
+                  path: bundles
+
+            - name: List bundles
+              run: |
+                  ls -la bundles
+
+            - name: Create release
+              uses: softprops/action-gh-release@v2
+              with:
+                  tag_name: v${{ needs.update_changelog.outputs.pre_release_version }}
+                  name: ${{ needs.update_changelog.outputs.pre_release_version }}
+                  target_commitish: ${{ needs.update_changelog.outputs.changelog_commitish }}
+                  body: ${{ needs.release_metadata.outputs.release_notes }}
+                  prerelease: true
+                  files: |
+                      bundles/*
+
+    publish_to_npm:
+        name: Publish to NPM
+        needs: [update_changelog]
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Execute publish workflow
+              uses: apify/workflows/execute-workflow@main
+              with:
+                  workflow: publish_to_npm.yaml
+                  inputs: >
+                      {
+                          "ref": "${{ needs.update_changelog.outputs.changelog_commitish }}",
+                          "tag": "beta"
+                      }
