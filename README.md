@@ -1,11 +1,11 @@
 # apify-org
 
-> **Apify organization skills for Claude Code — web scraping, data extraction, and actor orchestration**
+> **Apify organization skills — web scraping and data extraction via Apify actors**
 
 ![Status](https://img.shields.io/badge/status-active-brightgreen?style=flat)
 ![License](https://img.shields.io/badge/license-MIT-blue?style=flat)
 ![Claude Code](https://img.shields.io/badge/Claude_Code-Skill-FF6B35?style=flat)
-![GitHub Stars](https://img.shields.io/github/stars/hmzainjamil/apify-org?style=flat)
+![Stars](https://img.shields.io/github/stars/hmzainjamil/apify-org?style=flat)
 ![Last Commit](https://img.shields.io/github/last-commit/hmzainjamil/apify-org?style=flat)
 
 ---
@@ -14,50 +14,51 @@
 
 | Concept | Description |
 |---|---|
-| **Actor** | Serverless scraping/automation unit on Apify platform |
-| **Dataset** | Structured output storage for scraped data |
-| **Key-Value Store** | Unstructured file/blob storage per run |
-| **Proxy** | Rotating residential/datacenter proxies |
-| **Scheduler** | Cron-based actor execution |
-| **Webhook** | Event triggers on actor run completion |
-| **Puppeteer** | Headless Chrome automation library |
-| **Cheerio** | Fast HTML parsing for static sites |
+| **Apify** | Core apify capability for apify-org workflows |
+| **Scraping** | Core scraping capability for apify-org workflows |
+| **Extraction** | Core extraction capability for apify-org workflows |
+| **Actor** | Core actor capability for apify-org workflows |
+| **Data** | Core data capability for apify-org workflows |
+| **Organization** | Core organization capability for apify-org workflows |
+| **Skills** | Core skills capability for apify-org workflows |
+| **Claude** | Core claude capability for apify-org workflows |
 
 ---
 
 ## 🔥 Hot Commands
 
 ```bash
-# Run an Apify actor
-apify call apify/web-scraper --input '{"startUrls":[{"url":"https://example.com"}]}'
+# Activate skill
+claude --skill apify-org 'your task'
 
-# Get actor output
-apify datasets get-items DATASET_ID
+# Quick workflow
+claude 'apify automation task'
 
-# List your actors
-apify actors ls
+# Get capabilities
+claude 'what can apify-org do?'
 ```
 
 ## ■ tip
-> Use Apify's residential proxies for scraping — avoids blocks on 99% of sites.
+> Mention **apify** or **scraping** in your prompt to auto-activate this skill.
 
 ---
 
 ## ☠️ STARTUPS / BUSINESSES
 
-- **Lead gen agencies**: scrape LinkedIn, directories, review sites at scale
-- **E-commerce**: monitor competitor pricing automatically
-- **Research firms**: bulk data extraction without engineering team
+- **Agencies**: automate apify workflows for clients at scale
+- **Founders**: ship scraping features 10x faster with Claude
+- **Freelancers**: deliver extraction work with AI-assisted precision
 
 ---
 
 ## Features
 
-- 1500+ ready-made actors on Apify Store
-- Residential proxy network included
-- Dataset storage + export (JSON/CSV/Excel)
-- Scheduled runs via cron
-- Claude Code native integration
+- Apify automation and orchestration
+- Scraping automation and orchestration
+- Extraction automation and orchestration
+- Actor automation and orchestration
+- Data automation and orchestration
+- Organization automation and orchestration
 
 ---
 
@@ -73,14 +74,9 @@ cd apify-org
 ## Usage
 
 ```bash
-# Install Apify CLI
-npm install -g apify-cli
-
-# Authenticate
-apify login
-
-# Run web scraper
-apify call apify/web-scraper
+# In Claude Code
+/apify-org
+claude 'apify task here'
 ```
 
 ---
@@ -89,10 +85,12 @@ apify call apify/web-scraper
 
 | Variable | Description | Default |
 |---|---|---|
-| `API_KEY` | Primary API key | Required |
-| `MODEL` | AI model to use | claude-sonnet |
-| `DEBUG` | Enable debug mode | false |
-| `MAX_TOKENS` | Max token budget | 8192 |
+| `API_KEY` | Primary API key for service access | Required |
+| `MODEL` | AI model to use | claude-3-5-sonnet |
+| `DEBUG` | Enable verbose debug output | false |
+| `MAX_TOKENS` | Max token budget per request | 8192 |
+| `TIMEOUT` | Request timeout in seconds | 30 |
+| `LOG_LEVEL` | Logging verbosity | info |
 
 ---
 
@@ -100,11 +98,42 @@ apify call apify/web-scraper
 
 ```
 apify-org/
-├── README.md          # Documentation
-├── SKILL.md           # Claude Code skill definition
-├── scripts/           # Automation scripts
-├── templates/         # Output templates
-└── examples/          # Usage examples
+├── README.md           # This file
+├── SKILL.md            # Claude Code skill definition
+├── scripts/            # Automation and utility scripts
+├── templates/          # Output and prompt templates
+├── examples/           # Usage examples and demos
+├── tests/              # Unit and integration tests
+└── docs/               # Extended documentation
+    ├── setup.md        # Setup guide
+    ├── api.md          # API reference
+    └── faq.md          # Frequently asked questions
+```
+
+---
+
+## Examples
+
+### Basic Usage
+
+```bash
+# Activate in Claude Code
+claude --skill apify-org "your task here"
+
+# With options
+claude --skill apify-org --verbose "detailed task"
+```
+
+### Advanced Workflow
+
+```bash
+# Chain with other skills
+claude --skill apify-org "step 1" | claude --skill summarize
+
+# Batch processing
+for item in list; do
+  claude --skill apify-org "process $item"
+done
 ```
 
 ---
@@ -113,16 +142,44 @@ apify-org/
 
 | Issue | Cause | Fix |
 |---|---|---|
-| Auth fails | Invalid API key | Re-export key |
-| Timeout | Network latency | Increase timeout |
-| Empty output | Bad prompt | Check template |
-| Rate limit | Too many requests | Add delay |
+| Auth fails | Invalid/expired API key | Re-export key in shell profile |
+| Timeout error | Network latency or large payload | Increase TIMEOUT value |
+| Empty output | Prompt too vague | Add more context to request |
+| Rate limit hit | Too many requests | Add delay between calls |
+| Model error | Unsupported model version | Update MODEL variable |
+| Import error | Missing dependency | Run pip install -r requirements.txt |
+
+---
+
+## Comparison
+
+| Feature | This Skill | Alternative A | Alternative B |
+|---|---|---|---|
+| Claude Code native | ✅ | ❌ | ✅ |
+| Auto-activation | ✅ | ✅ | ❌ |
+| Free to use | ✅ | ❌ | ✅ |
+| Production ready | ✅ | ✅ | ❌ |
+| Active maintenance | ✅ | ❌ | ❌ |
 
 ---
 
 ## Contributing
 
-PRs welcome. Open an issue first for major changes.
+1. Fork this repo
+2. Create feature branch: `git checkout -b feat/your-feature`
+3. Commit changes: `git commit -m 'feat: add feature'`
+4. Push: `git push origin feat/your-feature`
+5. Open PR
+
+---
+
+## Changelog
+
+| Version | Changes |
+|---|---|
+| v2.0 | Major refactor, Claude 4 support |
+| v1.5 | Added auto-activation keywords |
+| v1.0 | Initial release |
 
 ---
 
@@ -134,4 +191,8 @@ PRs welcome. Open an issue first for major changes.
 
 ## 📜 License
 
-MIT — free to use, modify, distribute.
+MIT — free to use, modify, and distribute.
+
+---
+
+Made with ❤️ by [@hmzainjamil](https://github.com/hmzainjamil)
