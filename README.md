@@ -1,5 +1,9 @@
 # apify-org
 
+<!-- HMZ PORTFOLIO STANDARD -->
+> Portfolio status: active · Visibility: public · Source of truth: current repository source.
+<!-- END HMZ PORTFOLIO STANDARD -->
+
 > **The Apify monorepo, mirrored and curated** - Curated mirror of Apify's production scraper org - actor-scraper, web-scraper, cheerio-scraper, puppeteer-scraper, playwright-scraper - battle-tested code from the people who built Crawlee.
 
 <p align="center">
