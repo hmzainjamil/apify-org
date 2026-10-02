@@ -22,29 +22,29 @@ The directories below contain separate project trees with their own README files
 
 | Group | Project README |
 |---|---|
-| SDKs and development tools | [apify-cli](../apify-cli/README.md) |
-| SDKs and development tools | [apify-client-js](../apify-client-js/README.md) |
-| SDKs and development tools | [apify-client-python](../apify-client-python/README.md) |
-| SDKs and development tools | [apify-sdk-js](../apify-sdk-js/README.md) |
-| SDKs and development tools | [apify-sdk-python](../apify-sdk-python/README.md) |
-| SDKs and development tools | [crawlee](../crawlee/README.md) |
-| SDKs and development tools | [crawlee-python](../crawlee-python/README.md) |
-| Actors and templates | [actor-templates](../actor-templates/README.md) |
-| Actors and templates | [actor-whitepaper](../actor-whitepaper/README.md) |
-| Scraping and browser tooling | [camoufox-js](../camoufox-js/README.md) |
-| Scraping and browser tooling | [fingerprint-suite](../fingerprint-suite/README.md) |
-| Scraping and browser tooling | [got-scraping](../got-scraping/README.md) |
-| Scraping and browser tooling | [impit](../impit/README.md) |
-| Scraping and browser tooling | [proxy-chain](../proxy-chain/README.md) |
-| Integrations and MCP | [apify-mcp-server](../apify-mcp-server/README.md) |
-| Integrations and MCP | [apify-openclaw-plugin](../apify-openclaw-plugin/README.md) |
-| Integrations and MCP | [cursor-plugins](../cursor-plugins/README.md) |
-| Integrations and MCP | [mcp-client-capabilities](../mcp-client-capabilities/README.md) |
-| Integrations and MCP | [n8n-nodes-apify](../n8n-nodes-apify/README.md) |
-| Integrations and MCP | [rag-web-browser](../rag-web-browser/README.md) |
-| Integrations and MCP | [tester-mcp-client](../tester-mcp-client/README.md) |
-| Skills and guides | [agent-skills](../agent-skills/README.md) |
-| Skills and guides | [awesome-skills](../awesome-skills/README.md) |
+| SDKs and development tools | [apify-cli](apify-cli/README.md) |
+| SDKs and development tools | [apify-client-js](apify-client-js/README.md) |
+| SDKs and development tools | [apify-client-python](apify-client-python/README.md) |
+| SDKs and development tools | [apify-sdk-js](apify-sdk-js/README.md) |
+| SDKs and development tools | [apify-sdk-python](apify-sdk-python/README.md) |
+| SDKs and development tools | [crawlee](crawlee/README.md) |
+| SDKs and development tools | [crawlee-python](crawlee-python/README.md) |
+| Actors and templates | [actor-templates](actor-templates/README.md) |
+| Actors and templates | [actor-whitepaper](actor-whitepaper/README.md) |
+| Scraping and browser tooling | [camoufox-js](camoufox-js/README.md) |
+| Scraping and browser tooling | [fingerprint-suite](fingerprint-suite/README.md) |
+| Scraping and browser tooling | [got-scraping](got-scraping/README.md) |
+| Scraping and browser tooling | [impit](impit/README.md) |
+| Scraping and browser tooling | [proxy-chain](proxy-chain/README.md) |
+| Integrations and MCP | [apify-mcp-server](apify-mcp-server/README.md) |
+| Integrations and MCP | [apify-openclaw-plugin](apify-openclaw-plugin/README.md) |
+| Integrations and MCP | [cursor-plugins](cursor-plugins/README.md) |
+| Integrations and MCP | [mcp-client-capabilities](mcp-client-capabilities/README.md) |
+| Integrations and MCP | [n8n-nodes-apify](n8n-nodes-apify/README.md) |
+| Integrations and MCP | [rag-web-browser](rag-web-browser/README.md) |
+| Integrations and MCP | [tester-mcp-client](tester-mcp-client/README.md) |
+| Skills and guides | [agent-skills](agent-skills/README.md) |
+| Skills and guides | [awesome-skills](awesome-skills/README.md) |
 
 
 ## Requirements
