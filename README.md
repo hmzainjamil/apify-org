@@ -1,157 +1,85 @@
-# apify-org
+# Apify SDK and scraper Actor snapshot
 
-> **The Apify monorepo, mirrored and curated** - Curated mirror of Apify's production scraper org - actor-scraper, web-scraper, cheerio-scraper, puppeteer-scraper, playwright-scraper - battle-tested code from the people who built Crawlee.
+This repository contains an `actor-scraper/` project with Apify SDK JavaScript workspace metadata and several scraper Actor packages. The tree also includes Actor READMEs, source, input schemas, Dockerfiles, release workflows, and project contribution/license files.
 
-<p align="center"><a href="https://github.com/hmzainjamil/apify-org">Repository</a> · <a href="https://github.com/hmzainjamil/apify-org/commits/main">Commits</a> · <a href="https://github.com/hmzainjamil/apify-org/issues">Issues</a></p>
-<p align="center"><img alt="Documentation" src="https://img.shields.io/badge/documentation-deep%20editorial-lightgrey"> <img alt="Lifecycle" src="https://img.shields.io/badge/lifecycle-active-success"></p>
+The repository name and contents alone do not establish that this is a complete or current mirror of Apify's upstream repositories. The nested package metadata identifies Apify's `apify-sdk-js` project, while tracked files and paths differ from the current upstream tree. Treat this checkout as a snapshot until maintainers verify its source commit and synchronization process.
 
-<!-- HMZ DEEP README v1 -->
+## Contents
 
-## At a glance
-
-| Field | Current state |
+| Path | Role |
 |---|---|
-| Repository | apify-org |
-| Visibility | Public |
-| Lifecycle | Active |
-| Evidence basis | Current repository documentation and source-visible material |
+| `actor-scraper/package.json` | pnpm-managed Apify SDK JavaScript workspace metadata and scripts |
+| `actor-scraper/packages/actor-scraper/` | Scraper Actor packages, including Cheerio, JSDOM, Playwright, Puppeteer, Camoufox and sitemap variants |
+| `actor-scraper/.github/workflows/` | Pull request, end-to-end, and release automation |
+| `actor-scraper/CONTRIBUTING.md` | Contribution guidance |
+| `actor-scraper/LICENSE.md` | Apache License 2.0 text in the nested project |
 
-## Why this exists
+See each Actor's README and input schema for its supported configuration and output behavior.
 
-**The Apify monorepo, mirrored and curated** - Curated mirror of Apify's production scraper org - actor-scraper, web-scraper, cheerio-scraper, puppeteer-scraper, playwright-scraper - battle-tested code from the people who built Crawlee.
+## Other nested project snapshots
 
-The README describes the current tooling and workflow scope without treating external provider capabilities or third-party system behavior as repository-owned functionality.
+The directories below contain separate project trees with their own README files. This index identifies the README path only; it does not assert that each snapshot is complete, current, maintained by Apify, or synchronized with an upstream repository. Check each project's README, package metadata, and license for provenance and instructions.
 
-## CONCEPTS
+| Group | Project README |
+|---|---|
+| SDKs and development tools | [apify-cli](../apify-cli/README.md) |
+| SDKs and development tools | [apify-client-js](../apify-client-js/README.md) |
+| SDKs and development tools | [apify-client-python](../apify-client-python/README.md) |
+| SDKs and development tools | [apify-sdk-js](../apify-sdk-js/README.md) |
+| SDKs and development tools | [apify-sdk-python](../apify-sdk-python/README.md) |
+| SDKs and development tools | [crawlee](../crawlee/README.md) |
+| SDKs and development tools | [crawlee-python](../crawlee-python/README.md) |
+| Actors and templates | [actor-templates](../actor-templates/README.md) |
+| Actors and templates | [actor-whitepaper](../actor-whitepaper/README.md) |
+| Scraping and browser tooling | [camoufox-js](../camoufox-js/README.md) |
+| Scraping and browser tooling | [fingerprint-suite](../fingerprint-suite/README.md) |
+| Scraping and browser tooling | [got-scraping](../got-scraping/README.md) |
+| Scraping and browser tooling | [impit](../impit/README.md) |
+| Scraping and browser tooling | [proxy-chain](../proxy-chain/README.md) |
+| Integrations and MCP | [apify-mcp-server](../apify-mcp-server/README.md) |
+| Integrations and MCP | [apify-openclaw-plugin](../apify-openclaw-plugin/README.md) |
+| Integrations and MCP | [cursor-plugins](../cursor-plugins/README.md) |
+| Integrations and MCP | [mcp-client-capabilities](../mcp-client-capabilities/README.md) |
+| Integrations and MCP | [n8n-nodes-apify](../n8n-nodes-apify/README.md) |
+| Integrations and MCP | [rag-web-browser](../rag-web-browser/README.md) |
+| Integrations and MCP | [tester-mcp-client](../tester-mcp-client/README.md) |
+| Skills and guides | [agent-skills](../agent-skills/README.md) |
+| Skills and guides | [awesome-skills](../awesome-skills/README.md) |
 
-| Concept | Location | Description |
-|---|---|---|
-| **Lerna config** | `actor-scraper/lerna.json` | Monorepo orchestrator - [Source](https://github.com/hmzainjamil/apify-org/blob/main/actor-scraper/lerna.json) |
-| **Package config** | `actor-scraper/package.json` | Workspace root - [Source](https://github.com/hmzainjamil/apify-org/blob/main/actor-scraper/package.json) |
-| **Oxlint config** | `actor-scraper/oxlint.config.ts` | Lint rules across actors - [Source](https://github.com/hmzainjamil/apify-org/blob/main/actor-scraper/oxlint.config.ts) |
-| **Pre-commit hook** | `actor-scraper/.husky/pre-commit` | Husky gate before commits - [Source](https://github.com/hmzainjamil/apify-org/blob/main/actor-scraper/.husky/pre-commit) |
-| **E2E workflow** | `actor-scraper/.github/workflows/test-e2e.yaml` | Real-site fixture tests - [Source](https://github.com/hmzainjamil/apify-org/blob/main/actor-scraper/.github/workflows/test-e2e.yaml) |
-| **Release workflow** | `actor-scraper/.github/workflows/release-generic-actors.yaml` | Versioned actor publishes - [Source](https://github.com/hmzainjamil/apify-org/blob/main/actor-scraper/.github/workflows/release-generic-actors.yaml) |
-| **PR title gate** | `actor-scraper/.github/workflows/check-pr-title.yaml` | Conventional commits enforced - [Source](https://github.com/hmzainjamil/apify-org/blob/main/actor-scraper/.github/workflows/check-pr-title.yaml) |
-| **Bug template** | `actor-scraper/.github/ISSUE_TEMPLATE/scraper_bug_report.yaml` | Structured bug intake - [Source](https://github.com/hmzainjamil/apify-org/blob/main/actor-scraper/.github/ISSUE_TEMPLATE/scraper_bug_report.yaml) |
-| **Contributing guide** | `actor-scraper/CONTRIBUTING.md` | How to add an actor - [Source](https://github.com/hmzainjamil/apify-org/blob/main/actor-scraper/CONTRIBUTING.md) |
-| **License** | `actor-scraper/LICENSE.md` | Apache-2.0 - [Source](https://github.com/hmzainjamil/apify-org/blob/main/actor-scraper/LICENSE.md) |
 
-## HOW IT WORKS
+## Requirements
 
-```
-+---------------------------------------------------------+
-|                       INPUT                             |
-|   lerna + npm workspaces . `actor-scraper/lerna.json|
-+--------------------------+------------------------------+
-                           v
-+---------------------------------------------------------+
-|                  ORIENT / PARSE                         |
-|   - Validate inputs                                     |
-|   - Load skill / agent / tool definitions               |
-|   - Resolve config + secrets from .env                  |
-+--------------------------+------------------------------+
-                           v
-+---------------------------------------------------------+
-|                  PLAN (Claude Sonnet)                   |
-|   - Decompose goal into ordered subtasks                |
-|   - Pick model per task (Sonnet / Haiku / Tier-0)       |
-+--------------------------+------------------------------+
-                           v
-+---------------------------------------------------------+
-|                  EXECUTE (parallel)                     |
-|   - Spawn sub-agents / call tools                       |
-|   - Stream tokens, persist artifacts                    |
-+--------------------------+------------------------------+
-                           v
-+---------------------------------------------------------+
-|                  VERIFY                                 |
-|   - Lint / typecheck / visual diff / QA agent           |
-|   - On failure -> re-prompt with error context          |
-+--------------------------+------------------------------+
-                           v
-+---------------------------------------------------------+
-|                  SHIP                                   |
-|   - Write to disk . commit . PR . upload                |
-+---------------------------------------------------------+
-```
+The nested workspace declares pnpm 10.24.0 and includes Apify SDK, Crawlee, TypeScript, Vitest, Turbo, Lerna, and lint/format tools. Individual Actors have their own package dependencies and scripts. Use the nested `actor-scraper/` directory as the project root when following its package instructions.
 
-## Install
+## Install and develop
+
+Inspect package scripts and contribution guidance before installing dependencies or running commands. The upstream project declares pnpm as its package manager:
 
 ```bash
-git clone https://github.com/hmzainjamil/apify-org.git
-cd apify-org
-
-# Per-repo install (try in order):
-bash install.sh 2>/dev/null || \
-npm install 2>/dev/null || \
-bun install 2>/dev/null || \
-pip install -r requirements.txt 2>/dev/null || true
+cd actor-scraper
+pnpm install
 ```
 
-Environment:
+The root workspace declares commands including `pnpm test`, `pnpm test:e2e`, `pnpm build`, and `pnpm lint`. End-to-end workflows can contact real websites. Run them only with appropriate authorization and test targets.
 
-```bash
-cp .env.example .env  # if present
-# fill ANTHROPIC_API_KEY at minimum
-```
+## Running an Actor
 
-## Usage
+Each Actor has its own `README.md`, `INPUT_SCHEMA.json`, `.actor/actor.json`, and package configuration. Read those files before running it. Actor execution may send requests to target websites, use Apify platform services, and incur platform or proxy costs. Requirements and available input fields vary by Actor.
 
-```bash
-# Claude Code skill packs:
-/skill-name "your goal"
+## Provenance and synchronization
 
-# CLI / scripts:
-python scripts/<script>.py --input ./input --output ./output
+The nested package metadata points to Apify's `apify-sdk-js` repository. A path comparison against the currently fetched upstream tree found significant differences, so this checkout is not documented here as a complete mirror. Maintainers should record the source commit, import date, sync process, and any intentional local changes before claiming upstream parity.
 
-# TypeScript projects:
-bun run dev    # or npm run dev
-```
+Do not remove, rewrite, or regenerate upstream-owned files without preserving their licenses, notices, and source provenance.
 
-### Configuration knobs
+## Security and data handling
 
-| Key | Default | Description |
-|---|---|---|
-| `ANTHROPIC_API_KEY` | - (required) | Claude API key |
-| `MODEL` | `claude-sonnet-4-7` | Default LLM |
-| `MODEL_FALLBACK` | `claude-haiku-4` | Cheaper fallback |
-| `MAX_TOKENS` | `8192` | Per-call ceiling |
-| `TEMPERATURE` | `0.2` | Determinism dial |
-| `LOG_LEVEL` | `info` | debug / info / warn / error |
-| `OUT_DIR` | `./out` | Where artifacts land |
-| `CACHE_DIR` | `.cache` | Prompt cache root |
-| `PARALLELISM` | `4` | Sub-agent concurrency |
-| `RETRY_MAX` | `3` | Per-call retry budget |
-| `TIMEOUT_S` | `120` | Per-call timeout |
-| `DRY_RUN` | `false` | Plan-only, no side effects |
+See [SECURITY.md](SECURITY.md). Review target-site permissions, data collection, Actor configuration, and destination storage before running a scraper. Never commit Apify tokens, account data, or private run outputs.
 
-### Case 3 - DTC brand, ad creative testing
+## Contributing
 
-- Before: $2K/month UGC creator retainer, 4 ads/month.
-- After: 30+ ad variants/week via Arcads + Claude, A/B-tested.
-- Result: 3x creative velocity, 41% lower CAC after 6 weeks.
+Follow [the nested contribution guide](actor-scraper/CONTRIBUTING.md) and preserve upstream attribution and license notices. Identify whether a proposed change belongs to the nested upstream project or this repository's outer snapshot.
 
-## Security
+## License
 
-- Never commit API keys. `.env` is in `.gitignore` by default.
-- Use [git-secret](https://git-secret.io/) or 1Password CLI for team secret sharing.
-- Review the QA / safety layer for any tool that writes to disk or runs shells (see `mac_safety.py` style guards).
-- Vulnerability reports: open a private GitHub Security Advisory.
-
-## Limitations
-
-- External provider APIs and policies change over time.
-- Integration claims require current compatibility tests.
-- Quantitative claims require reproducible evidence.
-
-## Related
-
-- [Claude Code](https://docs.claude.com/en/docs/claude-code) - official docs
-- [Anthropic Console](https://console.anthropic.com) - API keys + billing
-- [Crawlee](https://crawlee.dev) - web scraping framework
-- [hmz-claude-code-best-practice](https://github.com/hmzainjamil/hmz-claude-code-best-practice) - sister repo
-
-## Maintainer
-
-[hmzainjamil](https://github.com/hmzainjamil)
+The nested project contains [Apache License 2.0 text](actor-scraper/LICENSE.md). Confirm that it covers the files you intend to use and retain required notices when redistributing. Third-party dependencies and external Actors may have separate terms.
